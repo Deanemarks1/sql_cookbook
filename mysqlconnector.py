@@ -10,6 +10,7 @@ CURRENT_DB = None
 GLOBAL_SQL_CONFIG = None
 
 
+
 def set_global_config(config):
     """Set connection defaults. Database is optional."""
     global GLOBAL_SQL_CONFIG, CURRENT_DB
