@@ -2,8 +2,7 @@ import mysql.connector
 import pandas as pd
 import re
 
-print("✅ Deane’s MySQL Connector V34 — Flask-safe + persists DB across USE calls + no default DB required test to try auto connect")
-
+print("✅ Deane’s MySQL Connector V35 — Param support + safe + backwards compatible")
 
 
 # Global state
@@ -19,7 +18,7 @@ def set_global_config(config):
 
 
 class mysqlconnector:
-    def __init__(self, query, host, user, password, database=None):
+    def __init__(self, query, host, user, password, database=None, params=None):
         global CURRENT_DB
 
         self.df = pd.DataFrame()
@@ -39,18 +38,23 @@ class mysqlconnector:
         # Start with last known DB or default; both may be None (allowed)
         current_db = CURRENT_DB or database
 
+        # Params apply ONLY to the last SQL statement
+        params_list = [None] * len(statements)
+        if params:
+            params_list[-1] = params  # apply params to last statement only
+
         for i, stmt in enumerate(statements):
-            # Manually handle: USE dbname;   (supports backticks and $/_/-)
+            # Check for USE database;
             use_match = re.match(r'(?i)^USE\s+`?([A-Za-z0-9_\-$]+)`?$', stmt)
             if use_match:
                 current_db = use_match.group(1)
                 CURRENT_DB = current_db
                 print(f"📦 Switched default DB to: {CURRENT_DB}")
-                continue  # Don't pass USE to SQL engine
+                continue
 
             is_last = (i == len(statements) - 1)
 
-            # ✅ Allow connecting without a database (needed for CREATE DATABASE, etc.)
+            # Connect to MySQL (database may be None)
             conn = mysql.connector.connect(
                 host=host,
                 user=user,
@@ -60,14 +64,19 @@ class mysqlconnector:
             cursor = conn.cursor(buffered=True)
 
             try:
-                cursor.execute(stmt)
+                # Execute with or without params
+                if params_list[i] is not None:
+                    cursor.execute(stmt, params_list[i])
+                else:
+                    cursor.execute(stmt)
 
                 if is_last and cursor.description:
+                    # SELECT query that returned rows
                     self.columns = [col[0] for col in cursor.description]
                     self.result = [dict(zip(self.columns, row)) for row in cursor.fetchall()]
                     self.df = pd.DataFrame(self.result)
 
-                    # Fix float → int if all values are whole numbers
+                    # Float to Int conversion if needed
                     for col in self.df.columns:
                         if pd.api.types.is_float_dtype(self.df[col]):
                             series = self.df[col]
@@ -121,8 +130,8 @@ class mysqlconnector:
         return getattr(self.df, name)
 
 
-# 🔥 Simple wrapper: just run SQL
-def run_sql(query):
+# 🔥 Updated wrapper: run SQL with optional params
+def run_sql(query, params=None):
     global GLOBAL_SQL_CONFIG
     if GLOBAL_SQL_CONFIG is None:
         raise Exception("❌ SQL_CONFIG not set. Call set_global_config(SQL_CONFIG) first.")
@@ -132,11 +141,9 @@ def run_sql(query):
         host=GLOBAL_SQL_CONFIG["host"],
         user=GLOBAL_SQL_CONFIG["user"],
         password=GLOBAL_SQL_CONFIG["password"],
-        database=GLOBAL_SQL_CONFIG.get("database")  # can be None
+        database=GLOBAL_SQL_CONFIG.get("database"),
+        params=params
     )
-
-
-
 
 
 
@@ -179,7 +186,6 @@ elif 'comradmarx' in base_dir:
 
 else:
     raise Exception("❌ Unknown environment — SQL_CONFIG not defined.")
-
 
 
 
