@@ -2,22 +2,29 @@ import mysql.connector
 import pandas as pd
 import re
 
-print("✅ Deane’s MySQL Connector V35 — Param support + safe + backwards compatible")
+print("✅ Deane’s MySQL Connector V36 — Clean, Param-Safe, Jinja-Safe")
 
 
-# Global state
+# ============================================================
+# GLOBAL STATE
+# ============================================================
 CURRENT_DB = None
 GLOBAL_SQL_CONFIG = None
 
 
-
+# ============================================================
+# APPLY GLOBAL CONFIG
+# ============================================================
 def set_global_config(config):
-    """Set connection defaults. Database is optional."""
+    """Apply default connection settings (no default DB required)."""
     global GLOBAL_SQL_CONFIG, CURRENT_DB
     GLOBAL_SQL_CONFIG = config
     CURRENT_DB = config.get("database")  # may be None
 
 
+# ============================================================
+# MAIN CONNECTOR CLASS
+# ============================================================
 class mysqlconnector:
     def __init__(self, query, host, user, password, database=None, params=None):
         global CURRENT_DB
@@ -26,26 +33,40 @@ class mysqlconnector:
         self.result = []
         self.columns = []
 
-        # Remove /* */ block comments and # inline comments
+        # -----------------------------
+        # CLEAN SQL INPUT
+        # -----------------------------
         cleaned_query = re.sub(r'/\*.*?\*/', '', query, flags=re.DOTALL)
         cleaned_query = "\n".join(
             line for line in cleaned_query.splitlines()
             if not line.strip().startswith("#")
         )
 
-        self.query = cleaned_query.strip()
+        # Force ALWAYS a string — fixes .strip vs .strip() bug
+        if not isinstance(cleaned_query, str):
+            cleaned_query = str(cleaned_query)
+
+        cleaned_query = cleaned_query.strip()
+
+        # QUERY IS NOW VALIDATED
+        self.query = cleaned_query
+
+        # Allow multi-statement SQL
         statements = [s.strip() for s in self.query.split(';') if s.strip()]
 
-        # Start with last known DB or default; both may be None (allowed)
+        # Start with last DB known
         current_db = CURRENT_DB or database
 
-        # Params apply ONLY to the last SQL statement
+        # Params apply ONLY to last SQL statement
         params_list = [None] * len(statements)
         if params:
-            params_list[-1] = params  # apply params to last statement only
+            params_list[-1] = params
 
+        # ============================================================
+        # EXECUTE EACH STATEMENT
+        # ============================================================
         for i, stmt in enumerate(statements):
-            # Check for USE database;
+            # USE database;
             use_match = re.match(r'(?i)^USE\s+`?([A-Za-z0-9_\-$]+)`?$', stmt)
             if use_match:
                 current_db = use_match.group(1)
@@ -55,7 +76,9 @@ class mysqlconnector:
 
             is_last = (i == len(statements) - 1)
 
-            # Connect to MySQL (database may be None)
+            # -----------------------------
+            # CONNECT
+            # -----------------------------
             conn = mysql.connector.connect(
                 host=host,
                 user=user,
@@ -65,27 +88,34 @@ class mysqlconnector:
             cursor = conn.cursor(buffered=True)
 
             try:
-                # Execute with or without params
+                # -----------------------------
+                # EXECUTE (with or without params)
+                # -----------------------------
                 if params_list[i] is not None:
                     cursor.execute(stmt, params_list[i])
                 else:
                     cursor.execute(stmt)
 
+                # -----------------------------
+                # SELECT (last statement)
+                # -----------------------------
                 if is_last and cursor.description:
-                    # SELECT query that returned rows
                     self.columns = [col[0] for col in cursor.description]
-                    self.result = [dict(zip(self.columns, row)) for row in cursor.fetchall()]
-                    self.df = pd.DataFrame(self.result)
+                    rows = cursor.fetchall()
 
-                    # Float to Int conversion if needed
-                    for col in self.df.columns:
-                        if pd.api.types.is_float_dtype(self.df[col]):
-                            series = self.df[col]
-                            if (series.dropna() % 1 == 0).all():
-                                self.df[col] = series.astype("Int64")
+                    self.result = [dict(zip(self.columns, row)) for row in rows]
+                    df = pd.DataFrame(self.result)
 
-                    self.df = self.df.convert_dtypes()
+                    # Make int-like floats into Int64
+                    for col in df.columns:
+                        if pd.api.types.is_float_dtype(df[col]):
+                            s = df[col]
+                            if (s.dropna() % 1 == 0).all():
+                                df[col] = s.astype("Int64")
+
+                    self.df = df.convert_dtypes()
                     print("✅ Final SELECT returned rows.")
+
                 else:
                     conn.commit()
 
@@ -100,6 +130,9 @@ class mysqlconnector:
                 except:
                     pass
 
+    # ============================================================
+    # OUTPUT FORMATS
+    # ============================================================
     def to_df(self):
         return self.df
 
@@ -110,12 +143,28 @@ class mysqlconnector:
         return self.df.to_json(orient='records')
 
     def to_jinja(self):
+        """Convert DF to Jinja-friendly dict (safe for templates)."""
         df_clean = self.df.copy()
+
         for col in df_clean.columns:
-            if pd.api.types.is_timedelta64_dtype(df_clean[col]) or pd.api.types.is_datetime64_any_dtype(df_clean[col]):
+
+            # datetime or timedelta → string
+            if pd.api.types.is_datetime64_any_dtype(df_clean[col]) or \
+               pd.api.types.is_timedelta64_dtype(df_clean[col]):
                 df_clean[col] = df_clean[col].astype(str)
+
+            # decimals, integers, floats
             elif pd.api.types.is_numeric_dtype(df_clean[col]):
-                df_clean[col] = df_clean[col].apply(lambda x: float(x) if pd.notnull(x) else None)
+                df_clean[col] = df_clean[col].apply(
+                    lambda x: float(x) if pd.notnull(x) else None
+                )
+
+            # bytes → safe UTF-8
+            elif df_clean[col].dtype == object:
+                df_clean[col] = df_clean[col].apply(
+                    lambda x: x.decode() if isinstance(x, (bytes, bytearray)) else x
+                )
+
         return df_clean.to_dict(orient='records')
 
     def head(self, n=5):
@@ -131,7 +180,10 @@ class mysqlconnector:
         return getattr(self.df, name)
 
 
-# 🔥 Updated wrapper: run SQL with optional params
+
+# ============================================================
+# WRAPPER: run_sql() — with params support
+# ============================================================
 def run_sql(query, params=None):
     global GLOBAL_SQL_CONFIG
     if GLOBAL_SQL_CONFIG is None:
@@ -145,8 +197,6 @@ def run_sql(query, params=None):
         database=GLOBAL_SQL_CONFIG.get("database"),
         params=params
     )
-
-
 
 
 
