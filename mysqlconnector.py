@@ -2,7 +2,7 @@ import mysql.connector
 import pandas as pd
 import re
 
-print("✅ Deane’s MySQL Connector V37 — DF-Default, Param-Safe, Jinja-Safe")
+print("✅ Deane’s MySQL Connector V36 — Clean, Param-Safe, Jinja-Safe")
 
 
 # ============================================================
@@ -66,7 +66,6 @@ class mysqlconnector:
         # EXECUTE EACH STATEMENT
         # ============================================================
         for i, stmt in enumerate(statements):
-
             # USE database;
             use_match = re.match(r'(?i)^USE\s+`?([A-Za-z0-9_\-$]+)`?$', stmt)
             if use_match:
@@ -181,22 +180,16 @@ class mysqlconnector:
         return getattr(self.df, name)
 
 
-# ============================================================
-# WRAPPER: run_sql() — DEFAULT RETURNS DF
-# ============================================================
-def run_sql(query, params=None, return_raw=False):
-    """
-    Default behavior:
-        run_sql(...) -> pandas DataFrame
 
-    Opt-out:
-        run_sql(..., return_raw=True) -> mysqlconnector object
-    """
+# ============================================================
+# WRAPPER: run_sql() — with params support
+# ============================================================
+def run_sql(query, params=None):
     global GLOBAL_SQL_CONFIG
     if GLOBAL_SQL_CONFIG is None:
         raise Exception("❌ SQL_CONFIG not set. Call set_global_config(SQL_CONFIG) first.")
 
-    conn = mysqlconnector(
+    return mysqlconnector(
         query,
         host=GLOBAL_SQL_CONFIG["host"],
         user=GLOBAL_SQL_CONFIG["user"],
@@ -205,23 +198,24 @@ def run_sql(query, params=None, return_raw=False):
         params=params
     )
 
-    if return_raw:
-        return conn
-
-    return conn.to_df()
 
 
-# ============================================================
-# SQL_Cookbook Connection Setup -- OCT 18 2025
-# ============================================================
+
+
+
+
+#SQL_Cookbook Connection Setup -- OCT 18 2025
+#---------------------------------------------------------------------------------------##
 import os
 import sys
 
-base_dir = os.getcwd() + '/'
+#base_dir = os.getcwd()
+base_dir = os.getcwd() +'/'
 
 # Add project paths
 sys.path.append('/home/comradmarx/python_cook_book/')
 sys.path.append('/Users/deanemarks/Desktop/python_cook_book')
+
 
 # ✅ Define SQL config based on environment (NO default database here)
 if 'deanemarks' in base_dir:
@@ -231,10 +225,11 @@ if 'deanemarks' in base_dir:
         "password": "Podcast20!!"
         # no "database" key
     }
+ 
 
 elif 'comradmarx' in base_dir:
     SQL_CONFIG = {
-        "host": "comradmarx.mysql.pythonanywhere-services.com",
+        "host": "comradmarx.mysql.pythonanywhere-services.com",  # 👈 placeholder
         "user": "comradmarx",
         "password": "Podcast20!!"
         # no "database" key
@@ -243,5 +238,25 @@ elif 'comradmarx' in base_dir:
 else:
     raise Exception("❌ Unknown environment — SQL_CONFIG not defined.")
 
+
+
+
+
 # 🔧 Apply the config once
 set_global_config(SQL_CONFIG)
+#---------------------------------------------------------------------------------------##
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
