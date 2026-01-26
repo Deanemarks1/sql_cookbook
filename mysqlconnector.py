@@ -2,7 +2,7 @@ import mysql.connector
 import pandas as pd
 import re
 
-print("✅ Deane’s MySQL Connector V36 — Clean, Param-Safe, Jinja-Safe")
+print("✅ Deane’s MySQL Connector V37 — Clean, Param-Safe, Jinja-Safe, Mass-Insert-Safe")
 
 
 # ============================================================
@@ -42,13 +42,10 @@ class mysqlconnector:
             if not line.strip().startswith("#")
         )
 
-        # Force ALWAYS a string — fixes .strip vs .strip() bug
         if not isinstance(cleaned_query, str):
             cleaned_query = str(cleaned_query)
 
         cleaned_query = cleaned_query.strip()
-
-        # QUERY IS NOW VALIDATED
         self.query = cleaned_query
 
         # Allow multi-statement SQL
@@ -59,14 +56,17 @@ class mysqlconnector:
 
         # Params apply ONLY to last SQL statement
         params_list = [None] * len(statements)
-        if params:
+        if params is not None:
             params_list[-1] = params
 
         # ============================================================
         # EXECUTE EACH STATEMENT
         # ============================================================
         for i, stmt in enumerate(statements):
+
+            # -----------------------------
             # USE database;
+            # -----------------------------
             use_match = re.match(r'(?i)^USE\s+`?([A-Za-z0-9_\-$]+)`?$', stmt)
             if use_match:
                 current_db = use_match.group(1)
@@ -89,15 +89,21 @@ class mysqlconnector:
 
             try:
                 # -----------------------------
-                # EXECUTE (with or without params)
+                # EXECUTE (single or many)
                 # -----------------------------
                 if params_list[i] is not None:
-                    cursor.execute(stmt, params_list[i])
+
+                    # 🔥 MASS INSERT SUPPORT (NEW)
+                    if isinstance(params_list[i], list):
+                        cursor.executemany(stmt, params_list[i])
+                    else:
+                        cursor.execute(stmt, params_list[i])
+
                 else:
                     cursor.execute(stmt)
 
                 # -----------------------------
-                # SELECT (last statement)
+                # SELECT (last statement only)
                 # -----------------------------
                 if is_last and cursor.description:
                     self.columns = [col[0] for col in cursor.description]
@@ -106,7 +112,7 @@ class mysqlconnector:
                     self.result = [dict(zip(self.columns, row)) for row in rows]
                     df = pd.DataFrame(self.result)
 
-                    # Make int-like floats into Int64
+                    # Convert int-like floats → Int64
                     for col in df.columns:
                         if pd.api.types.is_float_dtype(df[col]):
                             s = df[col]
@@ -148,18 +154,15 @@ class mysqlconnector:
 
         for col in df_clean.columns:
 
-            # datetime or timedelta → string
             if pd.api.types.is_datetime64_any_dtype(df_clean[col]) or \
                pd.api.types.is_timedelta64_dtype(df_clean[col]):
                 df_clean[col] = df_clean[col].astype(str)
 
-            # decimals, integers, floats
             elif pd.api.types.is_numeric_dtype(df_clean[col]):
                 df_clean[col] = df_clean[col].apply(
                     lambda x: float(x) if pd.notnull(x) else None
                 )
 
-            # bytes → safe UTF-8
             elif df_clean[col].dtype == object:
                 df_clean[col] = df_clean[col].apply(
                     lambda x: x.decode() if isinstance(x, (bytes, bytearray)) else x
@@ -180,9 +183,8 @@ class mysqlconnector:
         return getattr(self.df, name)
 
 
-
 # ============================================================
-# WRAPPER: run_sql() — with params support
+# WRAPPER: run_sql()
 # ============================================================
 def run_sql(query, params=None):
     global GLOBAL_SQL_CONFIG
@@ -199,64 +201,33 @@ def run_sql(query, params=None):
     )
 
 
-
-
-
-
-
-#SQL_Cookbook Connection Setup -- OCT 18 2025
-#---------------------------------------------------------------------------------------##
+# ============================================================
+# ENV SETUP
+# ============================================================
 import os
 import sys
 
-#base_dir = os.getcwd()
-base_dir = os.getcwd() +'/'
+base_dir = os.getcwd() + '/'
 
-# Add project paths
 sys.path.append('/home/comradmarx/python_cook_book/')
 sys.path.append('/Users/deanemarks/Desktop/python_cook_book')
 
-
-# ✅ Define SQL config based on environment (NO default database here)
 if 'deanemarks' in base_dir:
     SQL_CONFIG = {
         "host": "127.0.0.1",
         "user": "root",
         "password": "Podcast20!!"
-        # no "database" key
     }
- 
 
 elif 'comradmarx' in base_dir:
     SQL_CONFIG = {
-        "host": "comradmarx.mysql.pythonanywhere-services.com",  # 👈 placeholder
+        "host": "comradmarx.mysql.pythonanywhere-services.com",
         "user": "comradmarx",
         "password": "Podcast20!!"
-        # no "database" key
     }
 
 else:
     raise Exception("❌ Unknown environment — SQL_CONFIG not defined.")
 
 
-
-
-
-# 🔧 Apply the config once
 set_global_config(SQL_CONFIG)
-#---------------------------------------------------------------------------------------##
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
