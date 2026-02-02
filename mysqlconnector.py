@@ -2,7 +2,7 @@ import mysql.connector
 import pandas as pd
 import re
 
-print("✅ Deane’s MySQL Connector V37 — Clean, Param-Safe, Jinja-Safe, Mass-Insert-Safe")
+print("✅ Deane’s MySQL Connector V38 — has query_value function ")
 
 
 # ============================================================
@@ -231,3 +231,29 @@ else:
 
 
 set_global_config(SQL_CONFIG)
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ============================================================
+# HELPER: query_value()
+# ============================================================
+def query_value(query, params=None):
+    """
+    Execute SQL and return the first column of the first row.
+    Returns None if no rows.
+    """
+    result = run_sql(query, params).to_dict()
+    if not result:
+        return None
+    return next(iter(result[0].values()))
+
