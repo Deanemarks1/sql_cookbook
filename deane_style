@@ -1,0 +1,4 @@
+:root {
+    --brand-primary: #3b3b3b;
+    --brand-accent: #d9917b;
+}
