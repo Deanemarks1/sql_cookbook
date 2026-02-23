@@ -89,19 +89,24 @@ def clean_price(value):
 
 
 
+import undetected_chromedriver as uc
 
-def create_browser(headless):
+def create_browser(headless=True, load_strategy="eager"):
     options = uc.ChromeOptions()
+
+    # Page load strategy (THIS is the fast part)
+    options.page_load_strategy = load_strategy   # "normal" | "eager" | "none"
+
     options.add_argument("--start-maximized")
     options.add_argument("--disable-popup-blocking")
 
-    if headless == True:
-        options.add_argument("--headless=new")  # 👈 headless mode added here
+    if headless:
+        options.add_argument("--headless=new")
 
     driver = uc.Chrome(options=options)
+
     print("🤖 Bot Initiated\n")
     return driver
-
 
 
 
