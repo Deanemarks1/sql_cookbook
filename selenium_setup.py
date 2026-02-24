@@ -2,9 +2,7 @@
 # SELENIUM ENGINE v1 (CLEAN FACTORY ONLY)
 # ============================================================
 
-print("\n==============================")
-print("selenium setup v1")
-print("==============================")
+print("Imported Selenium engine -- v2")
 
 # ============================================================
 # CORE IMPORTS
