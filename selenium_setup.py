@@ -2,7 +2,7 @@
 # SELENIUM ENGINE v1 (CLEAN FACTORY ONLY)
 # ============================================================
 
-print("Imported Selenium engine -- v5")
+print("Imported Selenium engine -- v6")
 
 # ============================================================
 # CORE IMPORTS
@@ -13,6 +13,7 @@ import selenium
 import undetected_chromedriver as uc
 from bs4 import BeautifulSoup
 import pandas as pd
+import time
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
