@@ -11,6 +11,8 @@ print("Imported Selenium engine -- v4")
 import ssl
 import selenium
 import undetected_chromedriver as uc
+from bs4 import BeautifulSoup
+import pandas as pd
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
