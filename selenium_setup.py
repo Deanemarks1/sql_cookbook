@@ -1,4 +1,13 @@
 # ============================================================
+# SILENCE MACOS LIBRESSL WARNING (urllib3 v2)
+# ============================================================
+
+import warnings
+from urllib3.exceptions import NotOpenSSLWarning
+warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
+
+
+# ============================================================
 # CORE IMPORTS
 # ============================================================
 
@@ -23,9 +32,17 @@ from selenium.common.exceptions import (
 )
 
 import undetected_chromedriver as uc
+import selenium
+import urllib3
+import ssl
 
 
+# ============================================================
+# VERSION PRINT
+# ============================================================
 
+print("\n")
+print("selenium setup v1")
 
 
 # ============================================================
@@ -40,6 +57,9 @@ def create_browser(headless=True, load_strategy="eager"):
 
     options.add_argument("--start-maximized")
     options.add_argument("--disable-popup-blocking")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
 
     if headless:
         options.add_argument("--headless=new")
@@ -50,21 +70,8 @@ def create_browser(headless=True, load_strategy="eager"):
     return driver
 
 
-
-
-
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
-
-
-
-
-
-
-
-
-
+# Initialize Driver
+driver = create_browser()
 
 
 # ============================================================
@@ -77,7 +84,6 @@ def open_new_tab(driver, url='about:blank'):
 
 
 def list_all_tab_urls(driver):
-
     urls = []
     current = driver.current_window_handle
 
@@ -90,7 +96,6 @@ def list_all_tab_urls(driver):
 
 
 def switch_to_tab(driver, index):
-
     tabs = driver.window_handles
 
     if 0 <= index < len(tabs):
@@ -102,7 +107,6 @@ def switch_to_tab(driver, index):
 
 
 def close_current_tab(driver, switch_to_index=0):
-
     driver.close()
     tabs = driver.window_handles
 
@@ -111,7 +115,6 @@ def close_current_tab(driver, switch_to_index=0):
 
 
 def close_tab_by_index(driver, index):
-
     tabs = driver.window_handles
 
     if 0 <= index < len(tabs):
