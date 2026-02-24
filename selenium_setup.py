@@ -22,9 +22,6 @@ from selenium.common.exceptions import (
     NoSuchElementException
 )
 
-print("Selenium Version :", selenium.__version__)
-print("SSL Backend      :", ssl.OPENSSL_VERSION)
-print("==============================\n")
 
 
 # ============================================================
