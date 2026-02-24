@@ -2,7 +2,7 @@
 # SELENIUM ENGINE v1 (CLEAN FACTORY ONLY)
 # ============================================================
 
-print("Imported Selenium engine -- v7")
+print("Imported Selenium engine -- v8")
 
 # ============================================================
 # CORE IMPORTS
@@ -66,7 +66,10 @@ def create_browser(
 
     driver = uc.Chrome(options=options)
 
-    print("🤖 Bot Initiated\n")
+    if headless == True:
+        print("🤖 Headless Bot Created")
+    
+        
     return driver
 
 
