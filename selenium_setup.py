@@ -1,25 +1,18 @@
 # ============================================================
-# SILENCE MACOS LIBRESSL WARNING (urllib3 v2)
+# SELENIUM ENGINE v1 (CLEAN FACTORY ONLY)
 # ============================================================
 
-import warnings
-from urllib3.exceptions import NotOpenSSLWarning
-warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
-
+print("\n==============================")
+print("selenium setup v1")
+print("==============================")
 
 # ============================================================
 # CORE IMPORTS
 # ============================================================
 
-import os
-import sys
-import re
-import time
-from datetime import datetime, time as dtime
-import pytz
-
-import pandas as pd
-from bs4 import BeautifulSoup
+import ssl
+import selenium
+import undetected_chromedriver as uc
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -31,38 +24,46 @@ from selenium.common.exceptions import (
     NoSuchElementException
 )
 
-import undetected_chromedriver as uc
-import selenium
-import urllib3
-import ssl
+print("Selenium Version :", selenium.__version__)
+print("SSL Backend      :", ssl.OPENSSL_VERSION)
+print("==============================\n")
 
 
 # ============================================================
-# VERSION PRINT
+# BROWSER FACTORY
+# (NO DRIVER CREATED HERE)
 # ============================================================
 
-print("\n")
-print("selenium setup v1")
-
-
-# ============================================================
-# START SELENIUM (PRIMARY DRIVER)
-# ============================================================
-
-def create_browser(headless=True, load_strategy="eager"):
+def create_browser(
+        headless=True,
+        load_strategy="eager",
+        disable_images=False,
+        disable_gpu=True
+    ):
 
     options = uc.ChromeOptions()
 
-    options.page_load_strategy = load_strategy  # "normal" | "eager" | "none"
+    # Page Load Strategy
+    options.page_load_strategy = load_strategy   # normal | eager | none
 
+    # Core Stability Flags
     options.add_argument("--start-maximized")
     options.add_argument("--disable-popup-blocking")
-    options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
+    if disable_gpu:
+        options.add_argument("--disable-gpu")
+
     if headless:
         options.add_argument("--headless=new")
+
+    # Optional: Disable images for speed
+    if disable_images:
+        prefs = {
+            "profile.managed_default_content_settings.images": 2
+        }
+        options.add_experimental_option("prefs", prefs)
 
     driver = uc.Chrome(options=options)
 
@@ -70,15 +71,11 @@ def create_browser(headless=True, load_strategy="eager"):
     return driver
 
 
-# Initialize Driver
-driver = create_browser()
-
-
 # ============================================================
-# TAB MANAGEMENT
+# TAB UTILITIES
 # ============================================================
 
-def open_new_tab(driver, url='about:blank'):
+def open_new_tab(driver, url="about:blank"):
     driver.execute_script(f"window.open('{url}', '_blank');")
     driver.switch_to.window(driver.window_handles[-1])
 
@@ -108,6 +105,7 @@ def switch_to_tab(driver, index):
 
 def close_current_tab(driver, switch_to_index=0):
     driver.close()
+
     tabs = driver.window_handles
 
     if tabs:
