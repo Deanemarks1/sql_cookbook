@@ -2,7 +2,7 @@
 # SELENIUM ENGINE v1 (CLEAN FACTORY ONLY)
 # ============================================================
 
-print("Imported Selenium engine -- v8")
+print("Imported Selenium engine -- v9")
 
 # ============================================================
 # CORE IMPORTS
@@ -33,6 +33,10 @@ from selenium.common.exceptions import (
 # (NO DRIVER CREATED HERE)
 # ============================================================
 
+# ============================================================
+# BROWSER FACTORY (VERSION SAFE)
+# ============================================================
+
 def create_browser(
         headless=True,
         load_strategy="eager",
@@ -40,12 +44,25 @@ def create_browser(
         disable_gpu=True
     ):
 
+    import re
+    import subprocess
+
+    # --------------------------------------------------------
+    # Detect Installed Chrome Version (Mac)
+    # --------------------------------------------------------
+    try:
+        chrome_version = subprocess.check_output(
+            ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "--version"]
+        ).decode("utf-8")
+
+        version_main = int(re.search(r"\d+", chrome_version).group())
+
+    except Exception:
+        version_main = None  # fallback
+
     options = uc.ChromeOptions()
+    options.page_load_strategy = load_strategy
 
-    # Page Load Strategy
-    options.page_load_strategy = load_strategy   # normal | eager | none
-
-    # Core Stability Flags
     options.add_argument("--start-maximized")
     options.add_argument("--disable-popup-blocking")
     options.add_argument("--no-sandbox")
@@ -57,20 +74,27 @@ def create_browser(
     if headless:
         options.add_argument("--headless=new")
 
-    # Optional: Disable images for speed
     if disable_images:
         prefs = {
             "profile.managed_default_content_settings.images": 2
         }
         options.add_experimental_option("prefs", prefs)
 
-    driver = uc.Chrome(options=options)
+    # --------------------------------------------------------
+    # Force matching ChromeDriver version
+    # --------------------------------------------------------
+    driver = uc.Chrome(
+        options=options,
+        version_main=version_main
+    )
 
-    if headless == True:
-        print("🤖 Headless Bot Created")
-    
-        
+    if headless:
+        print(f"🤖 Headless Bot Created (Chrome v{version_main})")
+
     return driver
+        
+
+
 
 
 # ============================================================
