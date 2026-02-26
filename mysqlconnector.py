@@ -2,7 +2,7 @@ import mysql.connector
 import pandas as pd
 import re
 
-print("✅ Deane’s MySQL Connector V38 — has query_value function ")
+print("✅ Deane’s MySQL Connector V39 — has query_value function ")
 
 
 # ============================================================
@@ -120,7 +120,7 @@ class mysqlconnector:
                                 df[col] = s.astype("Int64")
 
                     self.df = df.convert_dtypes()
-                    print("✅ Final SELECT returned rows.")
+                    #print("✅ Final SELECT returned rows.")
 
                 else:
                     conn.commit()
