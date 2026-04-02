@@ -41,11 +41,14 @@ def create_browser(
         headless=True,
         load_strategy="eager",
         disable_images=False,
-        disable_gpu=True
+        disable_gpu=True,
+        use_profile=False,
+        profile_path="/Users/deanemarks/selenium_chrome_profile"
     ):
 
     import re
     import subprocess
+    import undetected_chromedriver as uc
 
     # --------------------------------------------------------
     # Detect Installed Chrome Version (Mac)
@@ -58,7 +61,7 @@ def create_browser(
         version_main = int(re.search(r"\d+", chrome_version).group())
 
     except Exception:
-        version_main = None  # fallback
+        version_main = None
 
     options = uc.ChromeOptions()
     options.page_load_strategy = load_strategy
@@ -67,6 +70,12 @@ def create_browser(
     options.add_argument("--disable-popup-blocking")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+
+    # --------------------------------------------------------
+    # ✅ Persistent profile (THIS is the magic)
+    # --------------------------------------------------------
+    if use_profile:
+        options.add_argument(f"user-data-dir={profile_path}")
 
     if disable_gpu:
         options.add_argument("--disable-gpu")
@@ -81,7 +90,7 @@ def create_browser(
         options.add_experimental_option("prefs", prefs)
 
     # --------------------------------------------------------
-    # Force matching ChromeDriver version
+    # Create driver
     # --------------------------------------------------------
     driver = uc.Chrome(
         options=options,
@@ -91,9 +100,10 @@ def create_browser(
     if headless:
         print(f"🤖 Headless Bot Created (Chrome v{version_main})")
 
-    return driver
-        
+    if use_profile:
+        print("🔐 Using persistent Chrome profile")
 
+    return driver
 
 
 
