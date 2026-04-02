@@ -36,14 +36,11 @@ from selenium.common.exceptions import (
 # ============================================================
 # BROWSER FACTORY (VERSION SAFE)
 # ============================================================
-
 def create_browser(
         headless=True,
         load_strategy="eager",
         disable_images=False,
-        disable_gpu=True,
-        use_profile=False,
-        profile_path="/Users/deanemarks/selenium_chrome_profile"
+        disable_gpu=True
     ):
 
     import re
@@ -71,12 +68,6 @@ def create_browser(
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
-    # --------------------------------------------------------
-    # ✅ Persistent profile (THIS is the magic)
-    # --------------------------------------------------------
-    if use_profile:
-        options.add_argument(f"user-data-dir={profile_path}")
-
     if disable_gpu:
         options.add_argument("--disable-gpu")
 
@@ -100,11 +91,7 @@ def create_browser(
     if headless:
         print(f"🤖 Headless Bot Created (Chrome v{version_main})")
 
-    if use_profile:
-        print("🔐 Using persistent Chrome profile")
-
     return driver
-
 
 
 # ============================================================
