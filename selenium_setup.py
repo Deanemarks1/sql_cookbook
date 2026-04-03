@@ -2,7 +2,7 @@
 # SELENIUM ENGINE v1 (CLEAN FACTORY ONLY)
 # ============================================================
 
-print("Imported Selenium engine -- v11")
+print("Imported Selenium engine -- v12")
 
 # ============================================================
 # CORE IMPORTS
@@ -30,12 +30,14 @@ from selenium.common.exceptions import (
 
 
 
-
 def create_driver_profile_1(headless=False):
 
     import undetected_chromedriver as uc
     
     options = uc.ChromeOptions()
+    
+    # 🔥 SPEED BOOST
+    options.page_load_strategy = "eager"
     
     # use your saved profile
     options.add_argument("--user-data-dir=/Users/deanemarks/selenium_chrome_profile")
@@ -44,6 +46,8 @@ def create_driver_profile_1(headless=False):
     # stability flags
     options.add_argument("--no-first-run")
     options.add_argument("--no-default-browser-check")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     
     # headless option
     if headless == True:
