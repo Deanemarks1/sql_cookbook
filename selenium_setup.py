@@ -2,7 +2,7 @@
 # SELENIUM ENGINE v1 (CLEAN FACTORY ONLY)
 # ============================================================
 
-print("Imported Selenium engine -- v12")
+print("Imported Selenium engine -- v13")
 
 # ============================================================
 # CORE IMPORTS
@@ -29,39 +29,68 @@ from selenium.common.exceptions import (
 
 
 
-
 def create_driver_profile_1(headless=False):
 
     import undetected_chromedriver as uc
     
     options = uc.ChromeOptions()
-    
-    # 🔥 SPEED BOOST
+
+    # 🚀 FAST BUT SAFE LOAD STRATEGY
     options.page_load_strategy = "eager"
-    
-    # use your saved profile
+
+    # 🚀 KEEP CSS (REQUIRED), KILL IMAGES
+    prefs = {
+        "profile.managed_default_content_settings.images": 2,
+        "profile.managed_default_content_settings.stylesheets": 1
+    }
+    options.add_experimental_option("prefs", prefs)
+
+    # 🚀 USE YOUR PROFILE
     options.add_argument("--user-data-dir=/Users/deanemarks/selenium_chrome_profile")
     options.add_argument("--profile-directory=Default")
-    
-    # stability flags
+
+    # 🚀 PERFORMANCE FLAGS
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-notifications")
+    options.add_argument("--disable-background-networking")
+    options.add_argument("--disable-sync")
+    options.add_argument("--disable-infobars")
     options.add_argument("--no-first-run")
     options.add_argument("--no-default-browser-check")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    
-    # headless option
-    if headless == True:
+
+    # 🚀 SMALL WINDOW (LESS RENDER WORK)
+    options.add_argument("--window-size=900,700")
+
+    # 🚀 HEADLESS
+    if headless:
         options.add_argument("--headless=new")
         options.add_argument("--disable-gpu")
-    
-    # launch (MATCH YOUR CHROME VERSION)
+
+    # 🚀 LAUNCH
     driver = uc.Chrome(
         options=options,
         version_main=146,
         use_subprocess=True
     )
 
+    # 🚀 BLOCK HEAVY NETWORK REQUESTS (SAFE LIST)
+    try:
+        driver.execute_cdp_cmd("Network.enable", {})
+        driver.execute_cdp_cmd("Network.setBlockedURLs", {
+            "urls": [
+                "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp",
+                "*.woff", "*.woff2", "*.ttf",
+                "*.mp4", "*.webm"
+            ]
+        })
+    except:
+        pass
+
     return driver
+
+
 
 
 
