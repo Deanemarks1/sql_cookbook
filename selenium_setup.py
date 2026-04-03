@@ -2,7 +2,7 @@
 # SELENIUM ENGINE v1 (CLEAN FACTORY ONLY)
 # ============================================================
 
-print("Imported Selenium engine -- v10")
+print("Imported Selenium engine -- v11")
 
 # ============================================================
 # CORE IMPORTS
@@ -28,10 +28,40 @@ from selenium.common.exceptions import (
 
 
 
-# ============================================================
-# BROWSER FACTORY
-# (NO DRIVER CREATED HERE)
-# ============================================================
+
+
+
+def create_driver_profile_1(headless=False):
+
+    import undetected_chromedriver as uc
+    
+    options = uc.ChromeOptions()
+    
+    # use your saved profile
+    options.add_argument("--user-data-dir=/Users/deanemarks/selenium_chrome_profile")
+    options.add_argument("--profile-directory=Default")
+    
+    # stability flags
+    options.add_argument("--no-first-run")
+    options.add_argument("--no-default-browser-check")
+    
+    # headless option
+    if headless == True:
+        options.add_argument("--headless=new")
+        options.add_argument("--disable-gpu")
+    
+    # launch (MATCH YOUR CHROME VERSION)
+    driver = uc.Chrome(
+        options=options,
+        version_main=146,
+        use_subprocess=True
+    )
+
+    return driver
+
+
+
+
 
 # ============================================================
 # BROWSER FACTORY (VERSION SAFE)
