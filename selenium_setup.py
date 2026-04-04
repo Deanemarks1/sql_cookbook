@@ -2,7 +2,7 @@
 # SELENIUM ENGINE v1 (CLEAN FACTORY ONLY)
 # ============================================================
 
-print("Imported Selenium engine -- v13")
+print("Imported Selenium engine -- v14")
 
 # ============================================================
 # CORE IMPORTS
@@ -32,27 +32,42 @@ from selenium.common.exceptions import (
 def create_driver_profile_1(headless=False):
 
     import undetected_chromedriver as uc
-    
+
     options = uc.ChromeOptions()
 
-    # 🚀 FAST BUT SAFE LOAD STRATEGY
+    # -------------------------
+    # LOAD STRATEGY
+    # -------------------------
     options.page_load_strategy = "eager"
 
-    # 🚀 KEEP CSS (REQUIRED), KILL IMAGES
+    # -------------------------
+    # KEEP CSS, BLOCK IMAGES
+    # -------------------------
     prefs = {
         "profile.managed_default_content_settings.images": 2,
         "profile.managed_default_content_settings.stylesheets": 1
     }
     options.add_experimental_option("prefs", prefs)
 
-    # 🚀 USE YOUR PROFILE
+    # -------------------------
+    # YOUR PROFILE (LOGIN PERSIST)
+    # -------------------------
     options.add_argument("--user-data-dir=/Users/deanemarks/selenium_chrome_profile")
     options.add_argument("--profile-directory=Default")
 
-    # 🚀 PERFORMANCE FLAGS
+    # -------------------------
+    # 🔥 CRITICAL: PREVENT BACKGROUND THROTTLING
+    # -------------------------
+    options.add_argument("--disable-backgrounding-occluded-windows")
+    options.add_argument("--disable-renderer-backgrounding")
+    options.add_argument("--disable-background-timer-throttling")
+    options.add_argument("--disable-background-networking")
+
+    # -------------------------
+    # PERFORMANCE (SAFE)
+    # -------------------------
     options.add_argument("--disable-extensions")
     options.add_argument("--disable-notifications")
-    options.add_argument("--disable-background-networking")
     options.add_argument("--disable-sync")
     options.add_argument("--disable-infobars")
     options.add_argument("--no-first-run")
@@ -60,22 +75,47 @@ def create_driver_profile_1(headless=False):
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
-    # 🚀 SMALL WINDOW (LESS RENDER WORK)
-    options.add_argument("--window-size=900,700")
+    # -------------------------
+    # WINDOW (IMPORTANT)
+    # -------------------------
+    options.add_argument("--window-size=1200,900")
 
-    # 🚀 HEADLESS
+    # -------------------------
+    # HEADLESS (⚠️ NOT RECOMMENDED FOR TRADING)
+    # -------------------------
     if headless:
         options.add_argument("--headless=new")
         options.add_argument("--disable-gpu")
 
-    # 🚀 LAUNCH
+    # -------------------------
+    # LAUNCH
+    # -------------------------
     driver = uc.Chrome(
         options=options,
         version_main=146,
         use_subprocess=True
     )
 
-    # 🚀 BLOCK HEAVY NETWORK REQUESTS (SAFE LIST)
+    # -------------------------
+    # 🔥 FORCE ACTIVE WINDOW
+    # -------------------------
+    driver.execute_script("window.focus();")
+
+    # -------------------------
+    # 🔥 KEEP ALIVE LOOP (ANTI-IDLE)
+    # -------------------------
+    try:
+        driver.execute_script("""
+            setInterval(() => {
+                document.body.dispatchEvent(new MouseEvent('mousemove', {bubbles: true}));
+            }, 2000);
+        """)
+    except:
+        pass
+
+    # -------------------------
+    # BLOCK HEAVY NETWORK REQUESTS
+    # -------------------------
     try:
         driver.execute_cdp_cmd("Network.enable", {})
         driver.execute_cdp_cmd("Network.setBlockedURLs", {
