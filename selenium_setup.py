@@ -2,7 +2,7 @@
 # SELENIUM ENGINE v1 (CLEAN FACTORY ONLY)
 # ============================================================
 
-print("Imported Selenium engine -- v14")
+print("Imported Selenium engine -- v15")
 
 # ============================================================
 # CORE IMPORTS
@@ -25,6 +25,118 @@ from selenium.common.exceptions import (
     TimeoutException,
     NoSuchElementException
 )
+
+
+
+def create_driver_profile(profile_name="selenium_chrome_profile", headless=False):
+
+    import undetected_chromedriver as uc
+    import os
+
+    base_path = "/Users/deanemarks/"
+
+    profile_path = base_path + profile_name
+
+    options = uc.ChromeOptions()
+
+    # -------------------------
+    # LOAD STRATEGY
+    # -------------------------
+    options.page_load_strategy = "eager"
+
+    # -------------------------
+    # BLOCK IMAGES
+    # -------------------------
+    prefs = {
+        "profile.managed_default_content_settings.images": 2,
+        "profile.managed_default_content_settings.stylesheets": 1
+    }
+    options.add_experimental_option("prefs", prefs)
+
+    # -------------------------
+    # PROFILE (DYNAMIC 🔥)
+    # -------------------------
+    options.add_argument(f"--user-data-dir={profile_path}")
+    options.add_argument("--profile-directory=Default")
+
+    # -------------------------
+    # PREVENT THROTTLING
+    # -------------------------
+    options.add_argument("--disable-backgrounding-occluded-windows")
+    options.add_argument("--disable-renderer-backgrounding")
+    options.add_argument("--disable-background-timer-throttling")
+    options.add_argument("--disable-background-networking")
+
+    # -------------------------
+    # PERFORMANCE
+    # -------------------------
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-notifications")
+    options.add_argument("--disable-sync")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--no-first-run")
+    options.add_argument("--no-default-browser-check")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+
+    # -------------------------
+    # WINDOW
+    # -------------------------
+    options.add_argument("--window-size=1200,900")
+
+    # -------------------------
+    # HEADLESS
+    # -------------------------
+    if headless:
+        options.add_argument("--headless=new")
+        options.add_argument("--disable-gpu")
+
+    # -------------------------
+    # LAUNCH
+    # -------------------------
+    driver = uc.Chrome(
+        options=options,
+        version_main=146,
+        use_subprocess=True
+    )
+
+    # -------------------------
+    # KEEP ALIVE
+    # -------------------------
+    try:
+        driver.execute_script("""
+            setInterval(() => {
+                document.body.dispatchEvent(new MouseEvent('mousemove', {bubbles: true}));
+            }, 2000);
+        """)
+    except:
+        pass
+
+    # -------------------------
+    # BLOCK HEAVY REQUESTS
+    # -------------------------
+    try:
+        driver.execute_cdp_cmd("Network.enable", {})
+        driver.execute_cdp_cmd("Network.setBlockedURLs", {
+            "urls": [
+                "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp",
+                "*.woff", "*.woff2", "*.ttf",
+                "*.mp4", "*.webm"
+            ]
+        })
+    except:
+        pass
+
+    return driver
+
+
+
+#selenium_fetch_stocktwits_sentiment(ticker_list = filtered_tickers , driver = driver)
+
+
+
+
+
 
 
 
